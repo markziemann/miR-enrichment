@@ -1,0 +1,70 @@
+---
+title: "MicroRNA target enrichment analysis team"
+author: "MicroRNA target enrichment team"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    fig_width: 7
+    fig_height: 7
+theme: cosmo
+---
+
+Source: TBA
+
+## Introduction
+
+In this script we will look at a study PMID: 33530981, and look at the effect of not using the correct
+background gene list on DIANA miR-path results.
+
+The study includes some RNA-seq that was used to screen for circular RNAs but we will be using the
+RNA-seq data to determine the background gene set for downstream enrichment analysis.
+
+GSE113230/GSE113230
+
+```{r,libs}
+
+
+```
+
+
+## Obtain RNA-seq data from Recount3
+
+```{r,load}
+
+
+if ( file.exists("SRP140592.rds") ) {
+
+  x <- readRDS("SRP140592.rds")
+
+} else {
+
+  download.file("http://duffel.rail.bio/recount3/human/data_sources/sra/gene_sums/92/SRP140592/sra.gene_sums.SRP140592.G029.gz",
+    destfile="sra.gene_sums.SRP140592.G029.gz")
+
+  x <- read.table("sra.gene_sums.SRP140592.G029.gz",header=TRUE,row.names=1)
+
+  saveRDS(x,"SRP140592.rds")
+}
+
+head(x)
+
+dim(x)
+
+```
+
+## Remove lowly expressed genes
+
+Any gene with an average of >=10 reads per sample is kept.
+
+```{r,filt}
+
+
+xf <- x[rowMeans(x)>=10,]
+
+xd <- x[rowMeans(x)<10,]
+
+
+```
