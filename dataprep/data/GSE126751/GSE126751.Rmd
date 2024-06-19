@@ -1,0 +1,114 @@
+---
+title: "miR Enrichment"
+author: "Burnet Bioinformatics"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    fig_width: 7
+    fig_height: 7
+theme: cosmo
+---
+
+Source: https://github.com/markziemann/miR-enrichment
+
+## Introduction
+
+The predicted targets of microRNAs are used in functional enrichment analysis to justify the
+potential function of microRNAs, but there are some logical problems with this.
+In a biological tissue, not all of these targets will be expressed.
+Also the enrichment analysis requires a background list which is all the genes that can be
+measured.
+Not all genes are expressed in a tissue, at least half are silenced, so each enrichment
+analysis requires a custom background gene list.
+Unfortunately a custom background list is rarely used.
+We argue that this causes a dramatic distortion to the results.
+
+## Sample sheet
+
+Control mRNA: SRR8591371,SRR8591372,SRR8591373
+
+Case mRNA: SRR8591374,SRR8591375,SRR8591376
+
+## Methods
+
+
+```{r,packages}
+
+suppressPackageStartupMessages({
+    library("DESeq2")
+    library("gplots")
+    library("mitch")
+    library("eulerr")
+    library("getDEE2")
+    library("kableExtra")
+})
+
+```
+
+## Import read counts
+
+Importing RNA-seq data
+
+```{r,importdata}
+
+myfiles <-list.files(".",pattern="ke.tsv",recursive=TRUE)
+
+x <- lapply(myfiles,function(x) {
+  xx <- read.table(x,header=TRUE,row.names=1)
+  xx[,3,drop=FALSE]
+})
+
+x <-  do.call(cbind,x)
+colnames(x) <- gsub("_est_counts","",colnames(x))
+
+````
+
+Need gene symmbols to map to the transcripts.
+
+```{r,geneinfo}
+
+mdat <- getDEE2Metadata("hsapiens")
+d <- getDEE2(species="hsapiens",SRRvec="SRR11509477",mdat,outfile="NULL",counts="GeneCounts",legacy=TRUE)
+head(d$TxInfo)
+txinfo <- d$TxInfo
+
+````
+
+```{r,txinfo}
+
+xm <- merge(x,txinfo,by=0)
+xm$GeneID_symbol <- paste(xm$GeneID,xm$GeneSymbol)
+xm$Row.names = xm$GeneID = xm$GeneSymbol = xm$TxLength = NULL
+xa <- aggregate(. ~ GeneID_symbol,xm,sum)
+rownames(xa) <- xa[,1]
+xa[,1] = NULL
+
+```
+
+## Differential expression
+
+```{r,de}
+
+xaf <- xa[which(rowMeans(xa)>=10),]
+dim(xa) ; dim(xaf)
+
+ss <- data.frame("run"=colnames(xaf),"trt"=c(0,0,0,1,1,1))
+rownames(ss) <- ss$run
+
+mds <- cmdscale(dist(t(xaf)))
+plot(mds,cex=2,col="gray",pch=19)
+text(mds, labels=rownames(mds) ,col="black")
+
+colSums(xaf)
+
+dds <- DESeqDataSetFromMatrix(countData = round(xaf) , colData = ss , design = ~ trt )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <- cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+
+```
