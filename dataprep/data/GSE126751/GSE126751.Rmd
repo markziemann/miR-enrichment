@@ -64,9 +64,9 @@ x <- lapply(myfiles,function(x) {
 x <-  do.call(cbind,x)
 colnames(x) <- gsub("_est_counts","",colnames(x))
 
-````
+```
 
-Need gene symmbols to map to the transcripts.
+Need gene symbols to map to the transcripts.
 
 ```{r,geneinfo}
 
@@ -75,7 +75,9 @@ d <- getDEE2(species="hsapiens",SRRvec="SRR11509477",mdat,outfile="NULL",counts=
 head(d$TxInfo)
 txinfo <- d$TxInfo
 
-````
+```
+
+Merge txinfo.
 
 ```{r,txinfo}
 
@@ -110,5 +112,23 @@ z <- results(res)
 vsd <- vst(dds, blind=FALSE)
 zz <- cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
+head(dge)
+
+ups <- rownames(subset(dge,padj<0.05 & log2FoldChange>0))
+dns <- rownames(subset(dge,padj<0.05 & log2FoldChange<0))
+lapply(list("UPs"=ups,"DNs"=dns),length)
+nrow(dge)
+
+saveRDS(dge,file="GSE126751.Rds")
+
+```
+
+## Session information
+
+For reproducibility.
+
+```{r,session}
+
+sessionInfo()
 
 ```
