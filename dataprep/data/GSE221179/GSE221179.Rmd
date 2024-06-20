@@ -30,31 +30,14 @@ We argue that this causes a dramatic distortion to the results.
 
 GSE221179
 
-Control mRNA:
-SRR22776661  0
-SRR22776662  0
-SRR22776663  0
-SRR22776664  0
-SRR22776665  0
-SRR22776666  0
-SRR22776667  0
-SRR22776670  0
-SRR22776671  0
-SRR22776672  0
-SRR22776673  0
-SRR22776674  0
+```{r,ss}
 
-Case mRNA:
-SRR22776652  1
-SRR22776653  1
-SRR22776654  1
-SRR22776655  1
-SRR22776656  1
-SRR22776657  1
-SRR22776658  1
-SRR22776659  1
-SRR22776668  1
-SRR22776669  1
+ss <- read.table("GSE221179_samples.tsv",header=TRUE,row.names=1)
+ss$sex <- factor(ss$sex)
+ss$Condition <- factor(ss$Condition)
+ss
+
+```
 
 ## Methods
 
@@ -121,16 +104,13 @@ xa[,1] = NULL
 xaf <- xa[which(rowMeans(xa)>=10),]
 dim(xa) ; dim(xaf)
 
-ss <- data.frame("run"=colnames(xaf),"trt"=c(1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,0,0,0,0,0))
-rownames(ss) <- ss$run
-
 mds <- cmdscale(dist(t(xaf)))
 plot(mds,cex=2,col="gray",pch=19)
 text(mds, labels=rownames(mds) ,col="black")
 
 colSums(xaf)
 
-dds <- DESeqDataSetFromMatrix(countData = round(xaf) , colData = ss , design = ~ trt )
+dds <- DESeqDataSetFromMatrix(countData = round(xaf) , colData = ss , design = ~ Age + sex + Condition)
 res <- DESeq(dds)
 z <- results(res)
 vsd <- vst(dds, blind=FALSE)
