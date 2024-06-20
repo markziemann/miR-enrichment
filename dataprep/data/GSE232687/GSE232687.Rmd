@@ -30,9 +30,9 @@ We argue that this causes a dramatic distortion to the results.
 
 GSE232687
 
-Control mRNA: SRR8591371,SRR8591372,SRR8591373
+Control mRNA: Mock_IN_1 Mock_IN_2 Mock_IN_3
 
-Case mRNA: SRR8591374,SRR8591375,SRR8591376
+Case mRNA: RSV_IN_1 RSV_IN_2 RSV_IN_3
 
 ## Methods
 
@@ -56,39 +56,21 @@ Importing RNA-seq data
 
 ```{r,importdata}
 
-myfiles <-list.files(".",pattern="ke.tsv",recursive=TRUE)
-
-x <- lapply(myfiles,function(x) {
-  xx <- read.table(x,header=TRUE,row.names=1)
-  xx[,3,drop=FALSE]
-})
-
-x <-  do.call(cbind,x)
-colnames(x) <- gsub("_est_counts","",colnames(x))
-
-```
-
-Need gene symbols to map to the transcripts.
-
-```{r,geneinfo}
-
-mdat <- getDEE2Metadata("hsapiens")
-d <- getDEE2(species="hsapiens",SRRvec="SRR11509477",mdat,outfile="NULL",counts="GeneCounts",legacy=TRUE)
-head(d$TxInfo)
-txinfo <- d$TxInfo
-
-```
-
-Merge txinfo.
-
-```{r,txinfo}
-
-xm <- merge(x,txinfo,by=0)
-xm$GeneID_symbol <- paste(xm$GeneID,xm$GeneSymbol)
-xm$Row.names = xm$GeneID = xm$GeneSymbol = xm$TxLength = NULL
-xa <- aggregate(. ~ GeneID_symbol,xm,sum)
-rownames(xa) <- xa[,1]
-xa[,1] = NULL
+x <- read.table("GSE231788_SR92_genes_n_regRegions_raw_counts_for_degust_GEO.csv.gz",sep=",",header=TRUE)
+x$gene <- paste(x$gene_id,x$gene_symbol)
+x$biotype = x$chr = x$gene_symbol = x$gene_id = NULL
+xa <- aggregate(. ~ gene, x , sum)
+dim(x) ; dim(xa)
+rownames(xa) <- xa$gene
+xa$gene = NULL
+table(grepl("ENSR",rownames(xa)))
+xarat <- xa[grep("ENSR",rownames(xa)),]
+colSums(xarat)
+xah <- xa[grep("ENSG",rownames(xa)),]
+colSums(xah)
+head(xah)
+xahf <- xah[which(rowMeans(xah)>=10),]
+dim(xah) ; dim(xahf)
 
 ```
 
@@ -96,19 +78,16 @@ xa[,1] = NULL
 
 ```{r,de}
 
-xaf <- xa[which(rowMeans(xa)>=10),]
-dim(xa) ; dim(xaf)
+ss <- data.frame("run"=colnames(xahf),"trt"=c(0,0,0,1,1,1))
+rownames(ss) <- colnames(xahf)
 
-ss <- data.frame("run"=colnames(xaf),"trt"=c(0,0,0,1,1,1))
-rownames(ss) <- ss$run
-
-mds <- cmdscale(dist(t(xaf)))
+mds <- cmdscale(dist(t(xahf)))
 plot(mds,cex=2,col="gray",pch=19)
 text(mds, labels=rownames(mds) ,col="black")
 
-colSums(xaf)
+colSums(xahf)
 
-dds <- DESeqDataSetFromMatrix(countData = round(xaf) , colData = ss , design = ~ trt )
+dds <- DESeqDataSetFromMatrix(countData = round(xahf) , colData = ss , design = ~ trt )
 res <- DESeq(dds)
 z <- results(res)
 vsd <- vst(dds, blind=FALSE)
@@ -121,7 +100,7 @@ dns <- rownames(subset(dge,padj<0.05 & log2FoldChange<0))
 lapply(list("UPs"=ups,"DNs"=dns),length)
 nrow(dge)
 
-saveRDS(dge,file="GSE126751.Rds")
+saveRDS(dge,file="GSE232687.Rmd")
 
 ```
 
