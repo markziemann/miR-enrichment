@@ -113,6 +113,42 @@ colSums(xaf)
 dds <- DESeqDataSetFromMatrix(countData = round(xaf) , colData = ss , design = ~ Age + sex + Condition)
 res <- DESeq(dds)
 z <- results(res)
+vsd <- vst(dds, blind=FALSE,nsub=100)
+zz <- cbind(as.data.frame(z),assay(vsd))
+dge2 <- as.data.frame(zz[order(zz$pvalue),])
+head(dge2)
+
+ups <- rownames(subset(dge2,padj<0.05 & log2FoldChange>0))
+dns <- rownames(subset(dge2,padj<0.05 & log2FoldChange<0))
+lapply(list("UPs"=ups,"DNs"=dns),length)
+nrow(dge2)
+
+saveRDS(dge2,file="GSE221179_mirna.Rds")
+
+rownames(head(subset(dge2,log2FoldChange>0),5))
+
+rownames(head(subset(dge2,log2FoldChange<0),5))
+
+```
+
+## MiRNA DE
+
+```{r,mirna1}
+
+y <- read.table("GSE221130_miRNA_counts_human_cortex.txt.gz",header=TRUE,row.names=1)
+head(y)
+table(rowMeans(y)>10)
+yf <- y[which(rowMeans(y)>=10),]
+
+dim(yf) ; dim(y)
+
+ssmi <- data.frame(colnames(y),as.numeric(grepl("D",colnames(y))))
+rownames(ssmi) <- ssmi[,1]
+ssmi[,1]=NULL
+colnames(ssmi)="Condition"
+dds <- DESeqDataSetFromMatrix(countData = yf , colData = ssmi , design = ~ Condition)
+res <- DESeq(dds)
+z <- results(res)
 vsd <- vst(dds, blind=FALSE)
 zz <- cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
