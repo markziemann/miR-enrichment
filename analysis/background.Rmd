@@ -1,0 +1,98 @@
+---
+title: "miR Enrichment"
+author: "Burnet Bioinformatics"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+    fig_width: 7
+    fig_height: 7
+theme: cosmo
+---
+
+Source: https://github.com/markziemann/miR-enrichment
+
+## Introduction
+
+In this script we will conduct enrichment analysis of microRNA targets.
+We will determine whether using a custom background gene set changes the results.
+This will be releated for six studies: GSE126751, GSE188236, GSE146719, GSE184740,
+GSE221179, GSE232687.
+
+## Methods
+
+```{r,packages}
+
+suppressPackageStartupMessages({
+    library("DESeq2")
+    library("gplots")
+    library("fgsea")
+    library("eulerr")
+    library("getDEE2")
+    library("kableExtra")
+    library("biomaRt")
+    library("org.Hs.eg.db")
+})
+
+```
+
+## Import gene sets
+
+```{r,genesets}
+
+sets <- fgsea::gmtPathways("c3.mir.mirdb.v2023.2.Hs.symbols.gmt")
+length(sets)
+summary(unlist(lapply(sets,length)))
+
+```
+
+## Import RNA-seq profiles
+
+```{r,load_de}
+
+myde <- list.files("../dataprep/",recursive=TRUE,pattern="Rds$",full.names=TRUE)
+myde <- myde[grep("mir",myde,invert=TRUE)]
+myde <- myde[grep("txinfo",myde,invert=TRUE)]
+de <- lapply(myde,readRDS)
+names(de) <-  basename(myde)
+
+de2 <- lapply(de,function(x) {
+  y <- sapply(strsplit(rownames(x),"\\."),"[[",1)
+  unique(y)
+} )
+
+
+```
+
+Update gene symbols.
+
+```{r,gene symbols}
+
+mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+symb <- keys(org.Hs.eg.db, "SYMBOL")
+z <- getBM(c("ensembl_gene_id","hgnc_symbol"), "hgnc_symbol", symb, mart)
+
+head(z)
+dim(z)
+
+bg <- lapply(de2, function(x) {
+  unique(z[which(z$ensembl_gene_id %in% x ),2])
+} )
+
+```
+
+## MicroRNAs under study
+
+```{r,fg1}
+
+#GSE188236
+upmirs <- c("miR-143-3p","miR-181a-2-3p","miR-31-5p","miR-145-5p","miR-708-55p")
+dnmirs <- c("miR-499a-5p","miR-208b","miR-146b-5p","miR-139-5p","miR-502")
+
+head(names(sets))
+
+names(sets)[grep("143",names(sets))]
+
+```
