@@ -156,6 +156,10 @@ nrow(dge2)
 
 saveRDS(dge2,file="GSE146719_mir.Rds")
 
+rownames(head(subset(dge2,log2FoldChange>0),5))
+
+rownames(head(subset(dge2,log2FoldChange<0),5))
+
 ```
 ## Session information
 
