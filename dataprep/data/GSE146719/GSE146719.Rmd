@@ -124,6 +124,39 @@ saveRDS(dge,file="GSE146719.Rds")
 
 ```
 
+## MiRNA analysis
+
+```{r,mirna}
+
+y <- read.table("GSE146719_All.Counts.miRNA.txt.gz",header=TRUE,row.names=1)
+head(y)
+table(rowMeans(y)>10)
+yf <- y[which(rowMeans(y)>10),]
+yss <- data.frame(colnames(yf),"trt"=c(0,1,0,1,0,1))
+rownames(yss)  <- colnames(yf)
+
+mds <- cmdscale(dist(t(yf)))
+plot(mds,cex=2,col="gray",pch=19)
+text(mds, labels=rownames(mds) ,col="black")
+
+colSums(yf)
+
+dds <- DESeqDataSetFromMatrix(countData = round(yf) , colData = yss , design = ~ trt )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE,nsub=200)
+zz <- cbind(as.data.frame(z),assay(vsd))
+dge2 <- as.data.frame(zz[order(zz$pvalue),])
+head(dge2)
+
+ups <- rownames(subset(dge2,padj<0.05 & log2FoldChange>0))
+dns <- rownames(subset(dge2,padj<0.05 & log2FoldChange<0))
+lapply(list("UPs"=ups,"DNs"=dns),length)
+nrow(dge2)
+
+saveRDS(dge2,file="GSE146719_mir.Rds")
+
+```
 ## Session information
 
 For reproducibility.
