@@ -28,14 +28,13 @@ We argue that this causes a dramatic distortion to the results.
 
 ## Sample sheet
 
-GSE126751
+GSE146719
 
-Control mRNA: SRR8591371,SRR8591372,SRR8591373
+Control mRNA: SRR11280752, SRR11280754, SRR11280756
 
-Case mRNA: SRR8591374,SRR8591375,SRR8591376
+Case mRNA: SRR11280751, SRR11280753, SRR11280755
 
 ## Methods
-
 
 ```{r,packages}
 
@@ -99,7 +98,7 @@ xa[,1] = NULL
 xaf <- xa[which(rowMeans(xa)>=10),]
 dim(xa) ; dim(xaf)
 
-ss <- data.frame("run"=colnames(xaf),"trt"=c(0,0,0,1,1,1))
+ss <- data.frame("run"=colnames(xaf),"trt"=c(1,0,1,0,1))
 rownames(ss) <- ss$run
 
 mds <- cmdscale(dist(t(xaf)))
@@ -121,7 +120,7 @@ dns <- rownames(subset(dge,padj<0.05 & log2FoldChange<0))
 lapply(list("UPs"=ups,"DNs"=dns),length)
 nrow(dge)
 
-saveRDS(dge,file="GSE126751.Rds")
+saveRDS(dge,file="GSE146719.Rds")
 
 ```
 
