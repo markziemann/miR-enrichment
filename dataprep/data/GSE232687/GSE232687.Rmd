@@ -69,6 +69,7 @@ colSums(xarat)
 xah <- xa[grep("ENSG",rownames(xa)),]
 colSums(xah)
 head(xah)
+
 xahf <- xah[which(rowMeans(xah)>=10),]
 dim(xah) ; dim(xahf)
 
@@ -94,7 +95,6 @@ vsd <- vst(dds, blind=FALSE)
 zz <- cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 head(dge)
-
 ups <- rownames(subset(dge,padj<0.05 & log2FoldChange>0))
 dns <- rownames(subset(dge,padj<0.05 & log2FoldChange<0))
 lapply(list("UPs"=ups,"DNs"=dns),length)
@@ -113,3 +113,4 @@ For reproducibility.
 sessionInfo()
 
 ```
+
