@@ -100,7 +100,46 @@ dns <- rownames(subset(dge,padj<0.05 & log2FoldChange<0))
 lapply(list("UPs"=ups,"DNs"=dns),length)
 nrow(dge)
 
-saveRDS(dge,file="GSE232687.Rmd")
+saveRDS(dge,file="GSE232687.Rds")
+
+```
+
+## MiRNA DE
+
+```{r,mirna1}
+
+y <- read.table("GSE231784_quickmirseq.mapped.mirna.filtered.length.GEO.csv.gz",sep=",",header=TRUE)
+head(y)
+y$length = y$Seq = NULL
+ya <- aggregate(. ~ miRNA, y, sum)
+rownames(ya) <- ya$miRNA
+ya$miRNA = NULL
+
+yaf <- ya[which(rowMeans(ya)>10),]
+dim(ya) ; dim(yaf)
+
+
+ssy <- data.frame("run"=colnames(ya),"trt"=c(0,1,0,1,0,1))
+rownames(ssy) <- colnames(ya)
+
+colSums(yaf)
+
+dds <- DESeqDataSetFromMatrix(countData = round(yaf) , colData = ssy , design = ~ trt )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE,nsub=100)
+zz <- cbind(as.data.frame(z),assay(vsd))
+dge2 <- as.data.frame(zz[order(zz$pvalue),])
+head(dge2)
+ups <- rownames(subset(dge2,padj<0.05 & log2FoldChange>0))
+dns <- rownames(subset(dge2,padj<0.05 & log2FoldChange<0))
+lapply(list("UPs"=ups,"DNs"=dns),length)
+nrow(dge2)
+
+rownames(head(subset(dge2,log2FoldChange>0),5))
+rownames(head(subset(dge2,log2FoldChange<0),5))
+
+saveRDS(dge2,file="GSE232687_mirna.Rds")
 
 ```
 
