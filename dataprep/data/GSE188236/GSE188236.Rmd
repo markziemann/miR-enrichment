@@ -124,6 +124,19 @@ saveRDS(dge,file="GSE188236.Rds")
 
 ```
 
+## MiRNA DE
+
+```{r,mirna1}
+
+mifiles <- list.files("GSE188235_RAW",full.names=TRUE)
+
+y <- lapply(mifiles, function(f) {read.table(f,header=TRUE,row.names=1)} )
+str(y)
+y <- do.call(cbind,y)
+
+```
+
+
 ## Session information
 
 For reproducibility.
